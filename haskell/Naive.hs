@@ -19,11 +19,15 @@ data Term
 
 data Type = Int | Fun Type Type deriving (Show, Eq, Ord)
 
-type Env = String -> Maybe Term
+type Env = [(String, Term)]
+
+lkup :: Env -> String -> Term
+lkup env s = fromMaybe (error ("Unbound variable: " ++ s)) (lookup s env)
 
 -- Evaluate a term given an environment
 eval :: Env -> Term -> Term
-eval env (Var s) = eval env $ fromMaybe (error ("Unbound variable: " ++ s)) (env s)
+eval env (Var s) =
+  eval env $ lkup env s
 eval env (App e1 e2) = case (eval env e1) of
   Lam x _ e -> eval env (subst x e2 e)
   _         -> error $ "Not a function: " ++ show e1
@@ -64,10 +68,17 @@ i = Lam "x" Int (Var "x")
 k = Lam "x" Int (Lam "y" Int (Var "x"))
 
 capturing = App (App k (Var "y")) (Lit 10)
-noncapturing= App (App (Lam "a" Int (Lam "b" Int (Var "a"))) (Var "y")) (Lit 10)
+noncapturing = App (App (Lam "a" Int (Lam "b" Int (Var "a"))) (Var "y")) (Lit 10)
 
-empty = (\_ -> Nothing)
-wy = (\y -> if (y == "y") then Just $ Lit 42 else Nothing)
+-- Evaluating `pathological` with an environment containing
+-- `"y"` bound to `Var "x"` should eval to the value of `"x"` in that
+-- environment, not to `Lit 4`.
+pathological = App (Lam "x" Int (Var "y")) (Lit 4)
+
+empty = []
+wy = [("y", Lit 42)]
+ex = [("y", Var "x")]
+exy = [("y", Var "x"), ("x", Lit 42)]
 
 -- Typer
 

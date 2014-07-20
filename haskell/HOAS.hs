@@ -23,9 +23,12 @@ instance Show Runtime where
 -- The runtime environment
 type Env = [(Name, Runtime)]
 
+lkup :: Name -> Env -> Runtime
+lkup s env = fromMaybe (error $ "Unbound variable: " ++ s) $ lookup s env
+
 -- Evaluate a term to a runtime value given an environment
 eval :: Env -> Term -> Runtime
-eval env (Var s) = fromMaybe (error $ "Unbound variable: " ++ s) $ lookup s env
+eval env (Var s) = lkup s env
 eval env (Lam x _ e) = Function (\v -> eval ((x,v) : env) e)
 eval env (App e1 e2) = case eval env e1 of
   Function f -> f (eval env e2)
