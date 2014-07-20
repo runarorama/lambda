@@ -2,6 +2,12 @@ import Data.Maybe
 import Data.List
 import Control.Monad
 
+-- We use naive named variables for the lambda calculus
+-- but HOAS for evaluated terms. This benefits evaluation
+-- because we piggyback on the host language for substitution
+-- and alpha-conversion. It benefits typechecking because we
+-- don't have to work with HOAS when working with terms statically.
+
 type Name = String
 
 data Term

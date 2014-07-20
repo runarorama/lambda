@@ -21,7 +21,7 @@ object Naive {
   // Lambda abstraction
   case class Lam(name: String, typ: Type, body: Term) extends Term
 
-  // Evaluate a term `t` given an environment `env`
+  // Reduce a term `t` to normal form given an environment `env`
   def eval(env: String => Option[Term], t: Term): Term = t match {
     case Var(s) => eval(env, env(s).getOrElse(sys.error(s"Unbound variable: $s")))
     case App(e1, e2) => eval(env, e1) match {
