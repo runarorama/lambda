@@ -1,7 +1,5 @@
 module Lamb where
 
-import Prelude hiding (foldr)
-import Data.Foldable (foldr)
 import Control.Applicative
 import Data.List (elemIndex)
 
@@ -67,7 +65,7 @@ data Error
 
 -- Why is this not in stdlib?
 toEither :: b -> Maybe a -> Either b a
-toEither b = foldr (const . Right) (Left b)
+toEither b = maybe (Left b) Right
 
 -- Desugar and replace all bound variables with de Bruijn indices, or
 -- report an error if an unbound variable is encountered. Desugar let blocks
