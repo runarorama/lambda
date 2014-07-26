@@ -1,10 +1,9 @@
-module Lamb where
+module DeBruijn where
 
 import Control.Applicative
 import Data.List (elemIndex)
 
--- A simply-typed lambda calculator with let-bindings.
--- Implementation uses de Bruijn indices rather than a binding environment.
+-- A simply-typed lambda calculator with let-bindings, implemented with de Bruijn indices.
 -- Rob Norris / @tpolecat
 
 -- Identifiers are strings
@@ -28,8 +27,7 @@ data Surface
   | SLet [(Ident, Type, Surface)] Surface
   deriving Show
 
--- Desugared, with de Bruijn indices, expanded let-bindings, and generalized
--- binary operators.
+-- Desugared, with de Bruijn indices, expanded let-bindings, and generalized binary operators.
 data Desugared
   = DBound Int
   | DApp Desugared Desugared
@@ -57,8 +55,8 @@ data Value
 
 -- But things can go wrong
 data Error
-  = Unbound  Ident
-  | NotAFun  Desugared Type -- element, type
+  = Unbound Ident
+  | NotAFun Desugared Type       -- element, type
   | IllTyped Desugared Type Type -- element expected actual
   | DuplicateBinding Ident 
   deriving Show
@@ -67,9 +65,8 @@ data Error
 toEither :: b -> Maybe a -> Either b a
 toEither b = maybe (Left b) Right
 
--- Desugar and replace all bound variables with de Bruijn indices, or
--- report an error if an unbound variable is encountered. Desugar let blocks
--- into a series of lambdas, disallowing duplicates.
+-- Desugar and replace all bound variables with de Bruijn indices, or report an error if an unbound 
+-- variable is encountered. Desugar let blocks into a series of lambdas, disallowing duplicates.
 desugar :: [Ident] -> Surface -> Either Error Desugared
 desugar e s = case s of
   SNum n     -> Right (DNum n)
@@ -87,11 +84,12 @@ desugar e s = case s of
         then Left (DuplicateBinding i) 
         else checkBindings bs
 
--- Typechecker. With de Bruijn indices our type environment is simply a stack. 
+-- Typechecker. With de Bruijn indices our type environment is simply a stack. Indexing is assumed
+-- to be correct and is unchecked here.
 typecheck :: [Type] -> Desugared -> Either Error Type
 typecheck e d = case d of
   DNum n     -> Right TInt
-  DBound n   -> Right (e !! n) -- safe due to desugaring
+  DBound n   -> Right (e !! n)
   DLam t a   -> TFun t <$> typecheck (t : e) a
   DBin _ a b -> 
     do ta <- typecheck e a
@@ -116,19 +114,19 @@ typecheck e d = case d of
          TInt | otherwise -> Left (IllTyped f tt tf)
          x                -> Left (IllTyped b TInt tb)
 
--- Evaluate a typechecked program, yielding a value or an error.
--- With de Bruijn indices our binding environment is simply a stack. 
+-- Evaluate a typechecked program, yielding a value or an error. With de Bruijn indices our binding 
+-- environment is simply a stack. Indexing and typechecking are assumed correct and are unchecked.
 eval :: [Value] -> Desugared -> Either Error Value
 eval e d = case d of
   DNum n   -> Right (VNum n)
-  DBound n -> Right (e !! n) -- safe due to desugaring
+  DBound n -> Right (e !! n) 
   DLam _ a -> Right (VFun e a)
   DBin f a b -> 
-    do VNum a <- eval e a -- safe due to typechecking
+    do VNum a <- eval e a 
        VNum b <- eval e b
        Right $ VNum (f a b) 
   DApp a b -> 
-    do VFun e a <- eval e a -- safe due to typechecking
+    do VFun e a <- eval e a 
        b <- eval e b
        eval (b : e) a 
   DIfZ b t f ->
