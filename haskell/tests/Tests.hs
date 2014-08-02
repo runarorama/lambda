@@ -51,9 +51,9 @@ testClosureSimpleApp = assertEqual ""
                        (Num 1)
 
 testCapturingHOAS = assertEqual ""
-                    (hoasEval [] capturing)
+                    (hoasEval [("y",Lit 42)] capturing)
                     (Val 42)
 
 testCapturingClosure = assertEqual ""
-                       (closureEval [] capturing)
+                       (closureEval [("y",Lit 42)] capturing)
                        (Num 42)
